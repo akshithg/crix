@@ -35,12 +35,12 @@ string getFileName(DILocation *Loc, DISubprogram *SP) {
 /// Check if the value is a constant.
 bool isConstant(Value *V) {
   // Invalid input.
-  if (!V) 
+  if (!V)
     return false;
 
   // The value is a constant.
   Constant *Ct = dyn_cast<Constant>(V);
-  if (Ct) 
+  if (Ct)
     return true;
 
   return false;
@@ -51,7 +51,7 @@ string getSourceLine(string fn_str, unsigned lineno) {
 	std::ifstream sourcefile(fn_str);
 	string line;
 	sourcefile.seekg(ios::beg);
-	
+
 	for(int n = 0; n < lineno - 1; ++n){
 		sourcefile.ignore(std::numeric_limits<streamsize>::max(), '\n');
 	}
@@ -68,7 +68,7 @@ string getSourceFuncName(Instruction *I) {
 	unsigned lineno = Loc->getLine();
 	std::string fn_str = getFileName(Loc);
 	string line = getSourceLine(fn_str, lineno);
-	
+
 	while(line[0] == ' ' || line[0] == '\t')
 		line.erase(line.begin());
 	line = line.substr(0, line.find('('));
@@ -79,7 +79,7 @@ string extractMacro(string line, Instruction *I) {
 	string macro, word, FnName;
 	std::regex caps("[^\\(][_A-Z][_A-Z0-9]+[\\);,]+");
 	smatch match;
-	
+
 	// detect function macros
 	if (CallInst *CI = dyn_cast<CallInst>(I)) {
 		FnName = getCalledFuncName(CI);
@@ -88,7 +88,7 @@ string extractMacro(string line, Instruction *I) {
 
 		if (regex_search(line, match, keywords))
 		  line = line.substr(match[0].length());
-		
+
 		if (line.find(FnName) != std::string::npos) {
 			if (regex_search(FnName, match, caps))
 				return FnName;
@@ -308,7 +308,7 @@ size_t funcHash(Function *F, bool withName) {
 #ifdef HASH_SOURCE_INFO
 	}
 #endif
-	string::iterator end_pos = remove(output.begin(), 
+	string::iterator end_pos = remove(output.begin(),
 			output.end(), ' ');
 	output.erase(end_pos, output.end());
 
@@ -330,7 +330,7 @@ size_t callHash(CallInst *CI) {
 		FTy->print(rso);
 
 		string strip_str = rso.str();
-		string::iterator end_pos = remove(strip_str.begin(), 
+		string::iterator end_pos = remove(strip_str.begin(),
 				strip_str.end(), ' ');
 		strip_str.erase(end_pos, strip_str.end());
 		return str_hash(strip_str);
@@ -346,12 +346,7 @@ string HandleSimpleTy(Type *Ty){
 string expand_struct(StructType *STy) {
 	string ty_str = "";
 	unsigned NumEle = STy->getNumElements();
-	uint64_t TySize;
-	// TODO: Handle opaque structures
-	if (STy->isOpaque())
-		TySize = 0;
-	else
-		TySize = CurrentLayout->getStructLayout(STy)->getSizeInBits();
+	uint64_t TySize = CurrentLayout->getStructLayout(STy)->getSizeInBits();
 	ty_str = ty_str+to_string(NumEle)+","+to_string(TySize);
 	return ty_str;
 }
@@ -364,7 +359,7 @@ size_t typeHash(Type *Ty) {
 	raw_string_ostream rso(sig);
 	string ty_str = "";
 	StructType *STy = dyn_cast<StructType>(Ty);
-	if (STy == NULL)
+	if (STy == NULL || STy->isOpaque())
 		ty_str = ty_str+HandleSimpleTy(Ty);
 	else {
 		//Struct type
@@ -377,8 +372,8 @@ size_t typeHash(Type *Ty) {
 			ty_str = ty_str +  expand_struct(STy);
 		}
 	}
-	
-	
+
+
 	string::iterator end_pos = remove(ty_str.begin(), ty_str.end(), ' ');
 	ty_str.erase(end_pos, ty_str.end());
 
@@ -417,4 +412,3 @@ void getSourceCodeLine(Value *V, string &line) {
 
 	return;
 }
-

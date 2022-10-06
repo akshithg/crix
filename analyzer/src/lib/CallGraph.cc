@@ -337,6 +337,7 @@ bool CallGraphPass::typeConfineInStore(StoreInst *SI) {
 
 	Type *EVTy = PVTy->getElementType();
 
+
 	// Store something to a field of a composite-type object
 	Type *STy;
 	int Idx;
@@ -417,8 +418,9 @@ Value *CallGraphPass:: nextLayerBaseType(Value *V, Type * &BTy,
 
 	// Two ways to get the next layer type: GetElementPtrInst and
 	// LoadInst
-	// Case 1: GetElementPtrInst and ConstantExpr
-	if (auto GEP = dyn_cast<GEPOperator>(V)) {
+	// Case 1: GetElementPtrInst
+	if (GetElementPtrInst *GEP 
+			= dyn_cast<GetElementPtrInst>(V)) {
 		Type *PTy = GEP->getPointerOperand()->getType();
 		Type *Ty = PTy->getPointerElementType();
 		if ((Ty->isStructTy() || Ty->isArrayTy() || Ty->isVectorTy()) 

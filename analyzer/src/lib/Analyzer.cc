@@ -45,8 +45,8 @@ cl::opt<unsigned> VerboseLevel(
     cl::init(0));
 
 cl::opt<bool> SecurityChecks(
-    "sc", 
-    cl::desc("Identify sanity checks"), 
+    "sc",
+    cl::desc("Identify sanity checks"),
     cl::NotHidden, cl::init(false));
 
 cl::opt<bool> MissingChecks(
@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
 
 	// Main workflow
 	LoadStaticData(&GlobalCtx);
-	
+
 	// Initilaize gloable type map
 	TypeInitializerPass TIPass(&GlobalCtx);
 	TIPass.run(GlobalCtx.Modules);
@@ -189,9 +189,21 @@ int main(int argc, char **argv) {
 		MCPass.processResults();
 	}
 
+	// Pointer analysis
+	PointerAnalysisPass PAPass(&GlobalCtx);
+	PAPass.run(GlobalCtx.Modules);
+
+	// export FuncPAResults here with bbid values
+	for (auto &Pair : GlobalCtx.FuncPAResults)
+	{
+		// function name
+		OP << "FuncPAResults: " << Pair.first->getName() << "\n";// << " -> " << Pair.second << "\n";
+		// dense map of Value : SmallPtrSet
+		// TODO
+	}
+
 	// Print final results
-	//PrintResults(&GlobalCtx);
+	PrintResults(&GlobalCtx);
 
 	return 0;
 }
-
